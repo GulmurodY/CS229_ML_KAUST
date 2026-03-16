@@ -1,0 +1,5 @@
+Metric,Value
+CF_Train,0.405387
+CF_Val,0.466789
+GD_Train,0.517396
+GD_Val,0.57001
