@@ -1,0 +1,7 @@
+Metric,Value
+wine_polynomial_train_MSE,0.397271
+wine_polynomial_val_MSE,0.421604
+wine_gaussian_train_MSE,0.489852
+wine_gaussian_val_MSE,0.502233
+wine_sigmoidal_train_MSE,0.502464
+wine_sigmoidal_val_MSE,0.503221

@@ -1,0 +1,339 @@
+#include<iostream>
+#include<cmath>
+#include<vector>
+#include<sstream>
+#include<fstream>
+#include<string>
+#include<thread>
+#include <chrono>
+#include <random>
+#include "stats_and_matrix_operations.h"
+#include "linear_regression_models.h"
+#include "basis_functions.h"
+
+std::vector<std::vector<double>> buildDesignMatrix(
+    const std::vector<std::vector<double>>& data,
+    const BasisTransformConfig& config)
+{
+    std::vector<std::vector<double>> transformed;
+
+    if (config.basisType == "polynomial") {
+        transformed = applyPolynomialExpansion(data, config.polynomialDegree);
+    } else {
+        transformed = applyBasisForRegression(data, config);
+    }
+
+    std::vector<std::vector<double>> Phi;
+    Phi.reserve(transformed.size());
+
+    for (const auto& row : transformed) {
+        std::vector<double> phi_row;
+        phi_row.push_back(1.0);
+        for (size_t j = 0; j + 1 < row.size(); ++j) {
+            phi_row.push_back(row[j]);
+        }
+        Phi.push_back(std::move(phi_row));
+    }
+
+    return Phi;
+}
+
+BayesianLinearRegression computePosterior(
+    const std::vector<std::vector<double>>& data,
+    double alpha,
+    double beta,
+    const BasisTransformConfig& config)
+{
+    auto Phi = buildDesignMatrix(data, config);
+    size_t N = Phi.size();
+    size_t M = Phi[0].size();
+
+    std::vector<double> t(N);
+    for (size_t i = 0; i < N; ++i) t[i] = data[i].back();
+
+    auto Phi_T = getTranspose(Phi);
+    auto Phi_T_Phi = getMatrixProduct(Phi_T, Phi);
+
+    std::vector<std::vector<double>> S_N_inv(M, std::vector<double>(M, 0.0));
+    for (size_t i = 0; i < M; ++i) {
+        for (size_t j = 0; j < M; ++j) {
+            S_N_inv[i][j] = beta * Phi_T_Phi[i][j];
+        }
+        S_N_inv[i][i] += alpha;
+    }
+
+    auto S_N = getMatrixInverse(S_N_inv);
+
+    std::vector<std::vector<double>> t_mat(N, std::vector<double>(1));
+    for (size_t i = 0; i < N; ++i) t_mat[i][0] = t[i];
+
+    auto Phi_T_t = getMatrixProduct(Phi_T, t_mat);
+    auto S_N_Phi_T_t = getMatrixProduct(S_N, Phi_T_t);
+
+    std::vector<double> m_N(M);
+    for (size_t i = 0; i < M; ++i) m_N[i] = beta * S_N_Phi_T_t[i][0];
+
+    BayesianLinearRegression model;
+    model.m_N = m_N;
+    model.S_N = S_N;
+    model.alpha = alpha;
+    model.beta = beta;
+    model.basisConfig = config;
+    return model;
+}
+
+double predictiveMean(
+    const std::vector<double>& phi_x,
+    const std::vector<double>& m_N)
+{
+    double mean = 0.0;
+    for (size_t i = 0; i < m_N.size(); ++i) mean += m_N[i] * phi_x[i];
+    return mean;
+}
+
+double predictiveVariance(
+    const std::vector<double>& phi_x,
+    const std::vector<std::vector<double>>& S_N,
+    double beta)
+{
+    size_t M = phi_x.size();
+    std::vector<double> S_N_phi(M, 0.0);
+    for (size_t i = 0; i < M; ++i)
+        for (size_t j = 0; j < M; ++j)
+            S_N_phi[i] += S_N[i][j] * phi_x[j];
+
+    double quad = 0.0;
+    for (size_t i = 0; i < M; ++i) quad += phi_x[i] * S_N_phi[i];
+
+    return (1.0 / beta) + quad;
+}
+
+DatasetSplit splitData(std::vector<std::vector<double>> data, double trainRatio) {
+    std::random_device rd;
+    std::default_random_engine rng(rd());
+    std::shuffle(data.begin(), data.end(), rng);
+
+    size_t trainSize = static_cast<size_t>(data.size() * trainRatio);
+    
+    DatasetSplit split;
+    split.train.assign(data.begin(), data.begin() + trainSize);
+    split.validation.assign(data.begin() + trainSize, data.end());
+
+    return split;
+}
+
+std::vector<double> linearRegressionClosedForm(const std::vector<std::vector<double>>& data, double lambda) {
+    std::vector<std::vector<double>> X;
+    std::vector<double> y;
+    getModelMatrices(data, X, y);
+    
+    size_t n = X.size();  
+    size_t m = X[0].size(); 
+    
+    std::vector<std::vector<double>> X_T = getTranspose(X);
+    
+    std::vector<std::vector<double>> X_T_X = getMatrixProduct(X_T, X);
+
+
+    for (size_t i = 1; i < m; ++i) {
+        X_T_X[i][i] += lambda;
+    }
+
+    std::vector<std::vector<double>> X_T_X_inv = getMatrixInverse(X_T_X);
+    
+    std::vector<std::vector<double>> y_matrix(n, std::vector<double>(1));
+    for (size_t i = 0; i < n; ++i) {
+        y_matrix[i][0] = y[i];
+    }
+    
+    std::vector<std::vector<double>> X_T_y = getMatrixProduct(X_T, y_matrix);
+    
+    std::vector<std::vector<double>> beta_matrix = getMatrixProduct(X_T_X_inv, X_T_y);
+    
+    std::vector<double> beta(m);
+    for (size_t i = 0; i < m; ++i) {
+        beta[i] = beta_matrix[i][0];
+    }
+    
+    return beta;
+}
+
+std::vector<double> linearRegressionGradientDescent(const std::vector<std::vector<double>>& data,  double alpha,  int iterations, double lambda) {
+    std::vector<std::vector<double>> X;
+    std::vector<double> y;
+    
+    getModelMatrices(data, X, y);
+
+    size_t n = X.size();          
+    size_t m = X[0].size();       
+    std::vector<double> beta(m, 0.0);
+    
+    for (int iter = 0; iter < iterations; ++iter) {
+        std::vector<std::vector<double>> beta_mat(m, std::vector<double>(1));
+        for(size_t i = 0; i < m; ++i) beta_mat[i][0] = beta[i];
+        
+        std::vector<std::vector<double>> pred_mat = getMatrixProduct(X, beta_mat);
+        
+        std::vector<std::vector<double>> error_mat(n, std::vector<double>(1));
+        double total_mse = 0.0;
+        for (size_t i = 0; i < n; ++i) {
+            double error = pred_mat[i][0] - y[i];
+            error_mat[i][0] = error;
+            total_mse += error * error;
+        }
+        if (iter % 50 == 0) {
+            std::cout << " iteration " << iter << "current loss: " << total_mse << std::endl;
+        }
+
+        std::vector<std::vector<double>> XT = getTranspose(X);
+        std::vector<std::vector<double>> grad_mat = getMatrixProduct(XT, error_mat);
+        
+        for (size_t j = 0; j < m; ++j) {
+            double gradient = grad_mat[j][0] / n;
+            
+            if (j == 0) {
+                beta[j] -= alpha * gradient;
+            } else {
+                beta[j] -= alpha * (gradient + (lambda / n));
+            }
+        }
+    }
+    
+    return beta;
+}
+
+void compare_methods(const std::vector<std::vector<double>>& data) {
+    auto t1 = std::chrono::high_resolution_clock::now();
+    std::vector<double> w_cf = linearRegressionClosedForm(data);
+    auto t2 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> cf_time = t2 - t1;
+
+    auto t3 = std::chrono::high_resolution_clock::now();
+    std::vector<double> w_gd = linearRegressionGradientDescent(data);
+    auto t4 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> gd_time = t4 - t3;
+
+    std::cout << "CF took: " << cf_time.count() << "s" << std::endl;
+    std::cout << "GD took: " << gd_time.count() << "s" << std::endl;
+
+    double abs_diff_sum = 0.0;
+    for (int i = 0; i < w_cf.size(); ++i) {
+        double d = w_cf[i] - w_gd[i];
+        abs_diff_sum += std::abs(d);
+        std::cout << "w[" << i << "] -> CF: " << w_cf[i] << ", GD: " << w_gd[i] << std::endl;
+    }
+
+    std::cout << "Total diff: " << abs_diff_sum << std::endl;
+}
+void checkEffectOfLambda(const std::vector<std::vector<double>>& dataset) {
+    std::cout << "Closed Form solution" << std::endl;
+    std::vector<double> lambdas = {0.0, 0.01, 0.1, 1.0, 10.0};
+    for (double lambda : lambdas) {
+        std::vector<double> weights = linearRegressionClosedForm(dataset, lambda);
+        std::cout << "Lambda: " << lambda << " | Weights: ";
+        for (double w : weights) {
+            std::cout << w << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+    std::cout << "Gradient Descent solution" << std::endl; 
+    for (double lambda : lambdas) {
+        std::vector<double> weights = linearRegressionGradientDescent(dataset, 0.01, 1000, lambda);
+        std::cout << "Lambda: " << lambda << " | Weights: ";
+        for (double w : weights) {
+            std::cout << w << " ";
+        }
+        std::cout << std::endl;
+    }
+}
+
+double calculateMSE(const std::vector<std::vector<double>>& data, const std::vector<double>& weights) {
+    double totalSquaredError = 0.0;
+    size_t n = data.size();
+
+    for (const auto& row : data) {
+        double prediction = weights[0];
+        
+        for (size_t i = 0; i < row.size() - 1; ++i) {
+            prediction += weights[i + 1] * row[i];
+        }
+
+        double actual = row.back();
+
+        double error = prediction - actual;
+        totalSquaredError += (error * error);
+    }
+
+    return totalSquaredError / static_cast<double>(n);
+}
+
+void saveResultsToCSV(std::string filename, std::vector<std::string> labels, std::vector<double> values) {
+    std::ofstream file(filename);
+    file << "Metric,Value\n"; 
+    
+    for(size_t i = 0; i < labels.size(); ++i) {
+        file << labels[i] << "," << values[i] << "\n";
+    }
+    file.close();
+}
+
+void saveResultsToCSV(std::string filename, std::vector<double> x_axis, std::vector<double> train_mse, std::vector<double> val_mse) {
+    std::ofstream file(filename);
+    file << "X_Value,Training_MSE,Validation_MSE\n";
+
+    for (size_t i = 0; i < x_axis.size(); ++i) {
+        file << x_axis[i] << "," << train_mse[i] << "," << val_mse[i] << "\n";
+    }
+    file.close();
+}
+
+void savePosteriorToCSV(
+    const std::string& filename,
+    const BayesianLinearRegression& model)
+{
+    std::ofstream file(filename);
+    file << "posterior_mean\n";
+    for (size_t i = 0; i < model.m_N.size(); ++i) {
+        file << "m_N[" << i << "]," << model.m_N[i] << "\n";
+    }
+
+    file << "\nposterior_covariance\n";
+    for (size_t i = 0; i < model.S_N.size(); ++i) {
+        for (size_t j = 0; j < model.S_N[i].size(); ++j) {
+            file << model.S_N[i][j];
+            if (j + 1 < model.S_N[i].size()) file << ",";
+        }
+        file << "\n";
+    }
+
+    file.close();
+}
+
+void savePredictionsToCSV(
+    const std::string& filename,
+    const std::vector<std::vector<double>>& data,
+    const BayesianLinearRegression& model)
+{
+    auto Phi = buildDesignMatrix(data, model.basisConfig);
+
+    size_t nFeatures = data.empty() ? 0 : data[0].size() - 1;
+
+    std::ofstream file(filename);
+    for (size_t j = 0; j < nFeatures; ++j) file << "x" << j << ",";
+    file << "actual,predicted_mean,lower_95CI,upper_95CI\n";
+
+    for (size_t i = 0; i < data.size(); ++i) {
+        for (size_t j = 0; j < nFeatures; ++j) file << data[i][j] << ",";
+
+        double actual = data[i].back();
+        double mu     = predictiveMean(Phi[i], model.m_N);
+        double var    = predictiveVariance(Phi[i], model.S_N, model.beta);
+        double std_   = std::sqrt(var);
+        double lo     = mu - 1.96 * std_;
+        double hi     = mu + 1.96 * std_;
+        file << actual << "," << mu << "," << lo << "," << hi << "\n";
+    }
+
+    file.close();
+}
