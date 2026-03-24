@@ -1,5 +1,5 @@
 Metric,Value
-MLE_train,0.397125
-MLE_val,0.421891
-Bayes_train,0.397271
-Bayes_val,0.421604
+MLE_train,0.390255
+MLE_val,0.450955
+Bayes_train,0.390307
+Bayes_val,0.451254

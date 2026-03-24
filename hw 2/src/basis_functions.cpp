@@ -10,7 +10,11 @@
 #include "basis_functions.h"
 
 
-double gaussianBasis(double x, double mean, double sigma) {
+double gaussianBasis(
+    double x, 
+    double mean, 
+    double sigma) 
+{
     if (sigma <= 0.0) {
         throw std::invalid_argument("Sigma must be > 0 for Gaussian basis.");
     }
@@ -18,7 +22,11 @@ double gaussianBasis(double x, double mean, double sigma) {
     return std::exp(-0.5 * z * z);
 }
 
-double sigmoidalBasis(double x, double center, double scale) {
+double sigmoidalBasis(
+    double x, 
+    double center, 
+    double scale) 
+{
     if (scale == 0.0) {
         throw std::invalid_argument("Scale must be non-zero for Sigmoidal basis.");
     }
@@ -26,15 +34,20 @@ double sigmoidalBasis(double x, double center, double scale) {
     return 1.0 / (1.0 + std::exp(-z));
 }
 
-double polynomialBasis(double x, int degree) {
+double polynomialBasis(
+    double x, 
+    int degree) 
+{
     if (degree < 1) {
         throw std::invalid_argument("Polynomial degree must be >= 1.");
     }
     return std::pow(x, degree);
 }
 
-std::vector<std::vector<double>> applyPolynomialExpansion(const std::vector<std::vector<double>>& data,
-                                                          int maxDegree) {
+std::vector<std::vector<double>> applyPolynomialExpansion(
+    const std::vector<std::vector<double>>& data,
+    int maxDegree) 
+{
     if (data.empty()) {
         return data;
     }
@@ -68,10 +81,12 @@ std::vector<std::vector<double>> applyPolynomialExpansion(const std::vector<std:
     return expandedData;
 }
 
-std::vector<std::vector<double>> applyBasisFunctions(const std::vector<std::vector<double>>& data,
-                                                     const std::string& basisType,
-                                                     double center,
-                                                     double scale) {
+std::vector<std::vector<double>> applyBasisFunctions(
+    const std::vector<std::vector<double>>& data,
+    const std::string& basisType,
+    double center,
+    double scale) 
+{
     if (data.empty()) {
         return data;
     }
@@ -108,8 +123,10 @@ std::vector<std::vector<double>> applyBasisFunctions(const std::vector<std::vect
     return transformed;
 }
 
-std::vector<std::vector<double>> applyBasisForRegression(const std::vector<std::vector<double>>& data,
-                                                         const BasisTransformConfig& config) {
+std::vector<std::vector<double>> applyBasisForRegression(
+    const std::vector<std::vector<double>>& data,
+    const BasisTransformConfig& config) 
+{
 
     if (config.basisType == "gaussian" ||
         config.basisType == "sigmoidal" ||

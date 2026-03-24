@@ -18,10 +18,15 @@ double sigmoidalBasis(double x, double center, double scale);
 
 double polynomialBasis(double x, int degree);
 
-std::vector<std::vector<double>> applyPolynomialExpansion(const std::vector<std::vector<double>>& data,
-														  int maxDegree);
+std::vector<std::vector<double>> applyPolynomialExpansion(
+	const std::vector<std::vector<double>>& data,
+	int maxDegree);
 
-std::vector<std::vector<double>> applyBasisFunctions(const std::vector<std::vector<double>>& data, const std::string& basisType, double center, double scale);
+std::vector<std::vector<double>> applyBasisFunctions(
+	const std::vector<std::vector<double>>& data, 
+	const std::string& basisType, 
+	double center, 
+	double scale);
 
 struct BasisTransformConfig {
 	std::string basisType = "none";
@@ -30,7 +35,8 @@ struct BasisTransformConfig {
 	double scale = 1.0;
 };
 
-std::vector<std::vector<double>> applyBasisForRegression(const std::vector<std::vector<double>>& data,
-														 const BasisTransformConfig& config);
+std::vector<std::vector<double>> applyBasisForRegression(
+	const std::vector<std::vector<double>>& data,
+	const BasisTransformConfig& config);
 
 #endif

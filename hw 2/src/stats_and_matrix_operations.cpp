@@ -9,7 +9,8 @@
 #include<stdexcept>
 #include "basis_functions.h"
 
-double getMean(std::vector<double>& nums) {
+double getMean(std::vector<double>& nums) 
+{
     double sum = 0;
     for (double num: nums) {
         sum += num;
@@ -17,7 +18,8 @@ double getMean(std::vector<double>& nums) {
     return sum / double(nums.size());
 }
 
-double getVariance(std::vector<double>& nums) {
+double getVariance(std::vector<double>& nums) 
+{
     double x_mean = getMean(nums);
     int n = nums.size();
     double sum_deviation_x = 0;
@@ -28,12 +30,14 @@ double getVariance(std::vector<double>& nums) {
     return sum_deviation_x / double(n - 1);
 }
 
-double getStandardDeviation(std::vector<double>& nums) {
+double getStandardDeviation(std::vector<double>& nums) 
+{
     double variance_x = getVariance(nums);
     return sqrt(variance_x);
 }
 
-std::vector<std::vector<double>> getTranspose(const std::vector<std::vector<double>>& mat) {
+std::vector<std::vector<double>> getTranspose(const std::vector<std::vector<double>>& mat) 
+{
     int rows = mat.size();
     int cols = mat[0].size();
     
@@ -48,7 +52,10 @@ std::vector<std::vector<double>> getTranspose(const std::vector<std::vector<doub
     return transposed;
 }
 
-void getModelMatrices(const std::vector<std::vector<double>>& data, std::vector<std::vector<double>>& X, std::vector<double>& y) {
+void getModelMatrices(
+    const std::vector<std::vector<double>>& data, 
+    std::vector<std::vector<double>>& X, std::vector<double>& y) 
+{
     size_t n = data.size();
     size_t m = data[0].size() - 1;
 
@@ -64,7 +71,10 @@ void getModelMatrices(const std::vector<std::vector<double>>& data, std::vector<
 }
 
 
-std::vector<std::vector<double>> getMatrixProduct(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B) {
+std::vector<std::vector<double>> getMatrixProduct(
+    const std::vector<std::vector<double>>& A, 
+    const std::vector<std::vector<double>>& B) 
+{
     if (A.empty() || B.empty()) {
         throw std::invalid_argument("Matrices cannot be empty.");
     }
@@ -115,7 +125,8 @@ std::vector<std::vector<double>> getMatrixProduct(const std::vector<std::vector<
     return C;
 }
 
-std::vector<std::vector<double>> getMatrixInverse(const std::vector<std::vector<double>>& matrix) {
+std::vector<std::vector<double>> getMatrixInverse(const std::vector<std::vector<double>>& matrix) 
+{
     size_t n = matrix.size();
     
 
@@ -174,13 +185,4 @@ std::vector<std::vector<double>> getMatrixInverse(const std::vector<std::vector<
     return inverse;
 }
 
-void printMatrix2D(const std::vector<std::vector<double>>& mat) {
-    for (const auto& row : mat) {
-        for (double val : row) {
-            std::cout << val << " ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
-}
 

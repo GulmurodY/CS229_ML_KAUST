@@ -1,11 +1,8 @@
 #include<iostream>
 #include<cmath>
 #include<vector>
-#include<sstream>
 #include<fstream>
 #include<string>
-#include<thread>
-#include <chrono>
 #include <random>
 #include "stats_and_matrix_operations.h"
 #include "linear_regression_models.h"
@@ -108,7 +105,10 @@ double predictiveVariance(
     return (1.0 / beta) + quad;
 }
 
-DatasetSplit splitData(std::vector<std::vector<double>> data, double trainRatio) {
+DatasetSplit splitData(
+    std::vector<std::vector<double>> data, 
+    double trainRatio) 
+{
     std::random_device rd;
     std::default_random_engine rng(rd());
     std::shuffle(data.begin(), data.end(), rng);
@@ -122,7 +122,10 @@ DatasetSplit splitData(std::vector<std::vector<double>> data, double trainRatio)
     return split;
 }
 
-std::vector<double> linearRegressionClosedForm(const std::vector<std::vector<double>>& data, double lambda) {
+std::vector<double> linearRegressionClosedForm(
+    const std::vector<std::vector<double>>& data, 
+    double lambda) 
+{
     std::vector<std::vector<double>> X;
     std::vector<double> y;
     getModelMatrices(data, X, y);
@@ -158,97 +161,10 @@ std::vector<double> linearRegressionClosedForm(const std::vector<std::vector<dou
     return beta;
 }
 
-std::vector<double> linearRegressionGradientDescent(const std::vector<std::vector<double>>& data,  double alpha,  int iterations, double lambda) {
-    std::vector<std::vector<double>> X;
-    std::vector<double> y;
-    
-    getModelMatrices(data, X, y);
-
-    size_t n = X.size();          
-    size_t m = X[0].size();       
-    std::vector<double> beta(m, 0.0);
-    
-    for (int iter = 0; iter < iterations; ++iter) {
-        std::vector<std::vector<double>> beta_mat(m, std::vector<double>(1));
-        for(size_t i = 0; i < m; ++i) beta_mat[i][0] = beta[i];
-        
-        std::vector<std::vector<double>> pred_mat = getMatrixProduct(X, beta_mat);
-        
-        std::vector<std::vector<double>> error_mat(n, std::vector<double>(1));
-        double total_mse = 0.0;
-        for (size_t i = 0; i < n; ++i) {
-            double error = pred_mat[i][0] - y[i];
-            error_mat[i][0] = error;
-            total_mse += error * error;
-        }
-        if (iter % 50 == 0) {
-            std::cout << " iteration " << iter << "current loss: " << total_mse << std::endl;
-        }
-
-        std::vector<std::vector<double>> XT = getTranspose(X);
-        std::vector<std::vector<double>> grad_mat = getMatrixProduct(XT, error_mat);
-        
-        for (size_t j = 0; j < m; ++j) {
-            double gradient = grad_mat[j][0] / n;
-            
-            if (j == 0) {
-                beta[j] -= alpha * gradient;
-            } else {
-                beta[j] -= alpha * (gradient + (lambda / n));
-            }
-        }
-    }
-    
-    return beta;
-}
-
-void compare_methods(const std::vector<std::vector<double>>& data) {
-    auto t1 = std::chrono::high_resolution_clock::now();
-    std::vector<double> w_cf = linearRegressionClosedForm(data);
-    auto t2 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> cf_time = t2 - t1;
-
-    auto t3 = std::chrono::high_resolution_clock::now();
-    std::vector<double> w_gd = linearRegressionGradientDescent(data);
-    auto t4 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> gd_time = t4 - t3;
-
-    std::cout << "CF took: " << cf_time.count() << "s" << std::endl;
-    std::cout << "GD took: " << gd_time.count() << "s" << std::endl;
-
-    double abs_diff_sum = 0.0;
-    for (int i = 0; i < w_cf.size(); ++i) {
-        double d = w_cf[i] - w_gd[i];
-        abs_diff_sum += std::abs(d);
-        std::cout << "w[" << i << "] -> CF: " << w_cf[i] << ", GD: " << w_gd[i] << std::endl;
-    }
-
-    std::cout << "Total diff: " << abs_diff_sum << std::endl;
-}
-void checkEffectOfLambda(const std::vector<std::vector<double>>& dataset) {
-    std::cout << "Closed Form solution" << std::endl;
-    std::vector<double> lambdas = {0.0, 0.01, 0.1, 1.0, 10.0};
-    for (double lambda : lambdas) {
-        std::vector<double> weights = linearRegressionClosedForm(dataset, lambda);
-        std::cout << "Lambda: " << lambda << " | Weights: ";
-        for (double w : weights) {
-            std::cout << w << " ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
-    std::cout << "Gradient Descent solution" << std::endl; 
-    for (double lambda : lambdas) {
-        std::vector<double> weights = linearRegressionGradientDescent(dataset, 0.01, 1000, lambda);
-        std::cout << "Lambda: " << lambda << " | Weights: ";
-        for (double w : weights) {
-            std::cout << w << " ";
-        }
-        std::cout << std::endl;
-    }
-}
-
-double calculateMSE(const std::vector<std::vector<double>>& data, const std::vector<double>& weights) {
+double calculateMSE(
+    const std::vector<std::vector<double>>& data, 
+    const std::vector<double>& weights) 
+{
     double totalSquaredError = 0.0;
     size_t n = data.size();
 
@@ -268,7 +184,11 @@ double calculateMSE(const std::vector<std::vector<double>>& data, const std::vec
     return totalSquaredError / static_cast<double>(n);
 }
 
-void saveResultsToCSV(std::string filename, std::vector<std::string> labels, std::vector<double> values) {
+void saveResultsToCSV(
+    std::string filename, 
+    std::vector<std::string> labels, 
+    std::vector<double> values) 
+{
     std::ofstream file(filename);
     file << "Metric,Value\n"; 
     
@@ -278,14 +198,16 @@ void saveResultsToCSV(std::string filename, std::vector<std::string> labels, std
     file.close();
 }
 
-void saveResultsToCSV(std::string filename, std::vector<double> x_axis, std::vector<double> train_mse, std::vector<double> val_mse) {
-    std::ofstream file(filename);
-    file << "X_Value,Training_MSE,Validation_MSE\n";
-
-    for (size_t i = 0; i < x_axis.size(); ++i) {
-        file << x_axis[i] << "," << train_mse[i] << "," << val_mse[i] << "\n";
+double bayesianMSE(const std::vector<std::vector<double>>& data,
+                   const BayesianLinearRegression& model)
+{
+    auto Phi = buildDesignMatrix(data, model.basisConfig);
+    double total = 0.0;
+    for (size_t i = 0; i < data.size(); ++i) {
+        double err = data[i].back() - predictiveMean(Phi[i], model.m_N);
+        total += err * err;
     }
-    file.close();
+    return total / data.size();
 }
 
 void savePosteriorToCSV(
@@ -304,7 +226,7 @@ void savePosteriorToCSV(
             file << model.S_N[i][j];
             if (j + 1 < model.S_N[i].size()) file << ",";
         }
-        file << "\n";
+        file << std::endl;
     }
 
     file.close();
@@ -321,18 +243,18 @@ void savePredictionsToCSV(
 
     std::ofstream file(filename);
     for (size_t j = 0; j < nFeatures; ++j) file << "x" << j << ",";
-    file << "actual,predicted_mean,lower_95CI,upper_95CI\n";
+    file << "actual, predicted_mean, lower_95CI, upper_95CI\n";
 
     for (size_t i = 0; i < data.size(); ++i) {
         for (size_t j = 0; j < nFeatures; ++j) file << data[i][j] << ",";
 
         double actual = data[i].back();
-        double mu     = predictiveMean(Phi[i], model.m_N);
-        double var    = predictiveVariance(Phi[i], model.S_N, model.beta);
-        double std_   = std::sqrt(var);
-        double lo     = mu - 1.96 * std_;
-        double hi     = mu + 1.96 * std_;
-        file << actual << "," << mu << "," << lo << "," << hi << "\n";
+        double predicted_mean     = predictiveMean(Phi[i], model.m_N);
+        double predicted_variance    = predictiveVariance(Phi[i], model.S_N, model.beta);
+        double standard_deviatioin   = std::sqrt(predicted_variance);
+        double lower_95CI     = predicted_mean - 1.96 * standard_deviatioin;
+        double upper_95CI     = predicted_mean + 1.96 * standard_deviatioin;
+        file << actual << ", " << predicted_mean << ", " << lower_95CI << ", " << upper_95CI << std::endl;
     }
 
     file.close();
