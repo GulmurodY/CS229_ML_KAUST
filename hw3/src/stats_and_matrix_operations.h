@@ -1,0 +1,19 @@
+#ifndef MATRIX_OPERATIONS_H
+#define MATRIX_OPERATIONS_H
+
+#include<iostream>
+#include<cmath>
+#include<vector>
+#include<string>
+#include<thread>
+
+double getMean(std::vector<double>& nums);
+double getVariance(std::vector<double>& nums);
+double getStandardDeviation(std::vector<double>& nums);
+
+std::vector<std::vector<double>> getTranspose(const std::vector<std::vector<double>>& mat);
+std::vector<std::vector<double>> getMatrixProduct(const std::vector<std::vector<double>>& A, const std::vector<std::vector<double>>& B);
+std::vector<std::vector<double>> getMatrixInverse(const std::vector<std::vector<double>>& matrix);
+void getModelMatrices(const std::vector<std::vector<double>>& data, std::vector<std::vector<double>>& X, std::vector<double>& y);
+
+#endif

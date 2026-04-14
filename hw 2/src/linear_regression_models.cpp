@@ -243,7 +243,7 @@ void savePredictionsToCSV(
 
     std::ofstream file(filename);
     for (size_t j = 0; j < nFeatures; ++j) file << "x" << j << ",";
-    file << "actual, predicted_mean, lower_95CI, upper_95CI\n";
+    file << "actual,predicted_mean,lower_95CI,upper_95CI\n";
 
     for (size_t i = 0; i < data.size(); ++i) {
         for (size_t j = 0; j < nFeatures; ++j) file << data[i][j] << ",";
@@ -254,7 +254,7 @@ void savePredictionsToCSV(
         double standard_deviatioin   = std::sqrt(predicted_variance);
         double lower_95CI     = predicted_mean - 1.96 * standard_deviatioin;
         double upper_95CI     = predicted_mean + 1.96 * standard_deviatioin;
-        file << actual << ", " << predicted_mean << ", " << lower_95CI << ", " << upper_95CI << std::endl;
+        file << actual << "," << predicted_mean << "," << lower_95CI << "," << upper_95CI << std::endl;
     }
 
     file.close();
