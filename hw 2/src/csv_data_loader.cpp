@@ -21,6 +21,9 @@ static std::vector<std::string> parseCSVLine(
         }
     }
     tokens.push_back(token);
+    for (auto& t : tokens) {
+        while (!t.empty() && (t.back() == '\r' || t.back() == ' ')) t.pop_back();
+    }
     return tokens;
 }
 

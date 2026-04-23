@@ -1,0 +1,2 @@
+TP,FP,TN,FN,accuracy,precision,recall,f1
+42,16,100,21,0.793296,0.724138,0.666667,0.694215

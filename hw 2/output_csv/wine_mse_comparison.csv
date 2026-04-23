@@ -1,7 +1,7 @@
 Metric,Value
-wine_polynomial_training_MSE,0.392001
-wine_polynomial_validation_MSE,0.441179
-wine_gaussian_training_MSE,0.482185
-wine_gaussian_validation_MSE,0.531748
-wine_sigmoidal_training_MSE,0.490024
-wine_sigmoidal_validation_MSE,0.55344
+wine_polynomial_training_MSE,0.406722
+wine_polynomial_validation_MSE,0.384371
+wine_gaussian_training_MSE,0.507349
+wine_gaussian_validation_MSE,0.421808
+wine_sigmoidal_training_MSE,0.521469
+wine_sigmoidal_validation_MSE,0.423293

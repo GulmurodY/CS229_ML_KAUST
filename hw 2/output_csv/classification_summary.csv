@@ -1,0 +1,5 @@
+dataset,model,accuracy,precision,recall,f1
+titanic,logreg,0.793296,0.724138,0.666667,0.694215
+titanic,gda,0.793296,0.724138,0.666667,0.694215
+iris_setosa_vs_rest,logreg,1,1,1,1
+iris_setosa_vs_rest,gda,1,1,1,1

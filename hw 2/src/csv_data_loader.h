@@ -8,11 +8,11 @@
 #include <set>
 #include <stdexcept>
 
-const std::string titanicPath      = "data_for_classification/titanic/train.csv";
-const std::string irisPath         = "data_for_classification/Iris/Iris.csv";
-const std::string winePath         = "data_for_regression/wine/winequality-red.csv";
-const std::string forestFiresPath  = "data_for_regression/forest fires/forestfires.csv";
-const std::string automobilePath   = "data_for_regression/automobile/imports-85.data";
+const std::string titanicPath      = "../data_for_classification/titanic/train.csv";
+const std::string irisPath         = "../data_for_classification/Iris/Iris.csv";
+const std::string winePath         = "../data_for_regression/wine/winequality-red.csv";
+const std::string forestFiresPath  = "../data_for_regression/forest fires/forestfires.csv";
+const std::string automobilePath   = "../data_for_regression/automobile/imports-85.data";
 
 struct CSVConfig {
     char delimiter = ',';

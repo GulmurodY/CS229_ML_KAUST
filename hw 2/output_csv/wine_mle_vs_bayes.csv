@@ -1,5 +1,5 @@
 Metric,Value
-MLE_training,0.396726
-MLE_validation,0.440222
-Bayesian_training,0.396745
-Bayesian_validation,0.440596
+MLE_training,0.404973
+MLE_validation,0.388895
+Bayesian_training,0.405142
+Bayesian_validation,0.388497
